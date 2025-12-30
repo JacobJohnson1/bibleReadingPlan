@@ -1,4 +1,4 @@
-# Bible Reading Plan PDF Generator - 2 Page, 2 Column Layout
+# Bible Reading Plan PDF Generator
 
 import sys
 import traceback
@@ -96,8 +96,8 @@ for i, r in enumerate(schedule):
     d = start + timedelta(days=i)
     rows.append([d.strftime("%b %d"), r])
 
-# Prepare for multi-column layout (4 columns per page)
-columns_per_page = 4
+# Prepare for multi-column layout
+columns_per_page = 5
 body_rows = rows[1:]
 total = len(body_rows)
 
@@ -107,7 +107,7 @@ available_height = 612 - 48  # subtract top/bottom margins (24 each)
 # approximate points per row (font 5.5 + padding). Increase to reduce rows per column.
 row_height = 12
 estimated_rows = int(available_height / row_height)
-# Cap rows per column so columns don't become excessively short/tall; tweak as needed
+# Cap rows per column so columns don't become excessively tall
 MAX_ROWS_PER_COLUMN = 39
 rows_per_column = min(estimated_rows, MAX_ROWS_PER_COLUMN)
 
@@ -161,7 +161,7 @@ def generate_pdf(output_path=None):
 
         colWidths = []
         for _ in range(columns_per_page):
-            colWidths.extend([30, 130])
+            colWidths.extend([30, 100])
 
         combined = Table(combined_rows, colWidths=colWidths)
         combined.setStyle(TableStyle(list(style.getCommands())))
@@ -174,7 +174,6 @@ def generate_pdf(output_path=None):
     # Debug: print summary info before building
     try:
         print(f"Building PDF with {len(rows)-1} days of readings; output: {output_path}")
-        # print(f"Chunk size: {chunk}; pages/columns: {len(chunks)} chunks")
     except Exception:
         pass
 
