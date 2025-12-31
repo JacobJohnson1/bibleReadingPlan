@@ -13,28 +13,28 @@ from datetime import date, timedelta
 import os
 import math
 
-sections = [
+books = [
     ("Gen",50),("Ex",40),("Lev",27),("Num",36),("Deu",34),
     ("Matt",28),
-    ("Joshua",24),("Judges",21),("Ruth",4),("1 Samuel",31),("2 Samuel",24),
+    ("Joshua",24),("Judges",21),("Ruth",4),("1 Sam",31),("2 Sam",24),
     ("1 Kings",22),("2 Kings",25),("1 Chron",29),("2 Chron",36),
     ("Ezra",10),("Nehemiah",13),("Esther",10),
     ("Mark",16),
     ("Job",42),("Psalms",150),("Prov",31),("Eccles.",12),("Song",8),
     ("Luke",24),
-    ("Isaiah",66),("Jeremiah",52),("Lamentations",5),("Ezekiel",48),("Daniel",12),
-    ("Hosea",14),("Joel",3),("Amos",9),("Obadiah",1),("Jonah",4),("Micah",7),
-    ("Nahum",3),("Habakkuk",3),("Zeph",3),("Haggai",2),("Zech.",14),("Malachi",4),
+    ("Isaiah",66),("Jer",52),("Lam",5),("Ezekiel",48),("Daniel",12),
+    ("Hosea",14),("Joel",3),("Amos",9),("Obd",1),("Jonah",4),("Micah",7),
+    ("Nahum",3),("Hab",3),("Zeph",3),("Haggai",2),("Zech.",14),("Malachi",4),
     ("John",21),
     ("Acts",28),("Romans",16),("1 Cor",16),("2 Cor",13),("Gal",6),
-    ("Ephesians",6),("Philippians",4),("Colossians",4),("1 Thess",5),
-    ("2 Thess",3),("1 Timothy",6),("2 Timothy",4),("Titus",3),("Philemon",1),
-    ("Hebrews",13),("James",5),("1 Peter",5),("2 Peter",3),("1 John",5),
-    ("2 John",1),("3 John",1),("Jude",1),("Rev",22)
+    ("Eph",6),("Phil",4),("Col",4),("1 Thess",5),
+    ("2 Thess",3),("1 Tim",6),("2 Tim",4),("Titus",3),("Philemon",1),
+    ("Heb",13),("James",5),("1 Peter",5),("2 Peter",3),("1 Jn",5),
+    ("2 Jn",1),("3 Jn",1),("Jude",1),("Rev",22)
 ]
 
 chapters = []
-for book, count in sections:
+for book, count in books:
     for c in range(1, count+1):
         chapters.append(f"{book} {c}")
 
@@ -80,9 +80,38 @@ def compress_chapters(chapter_list):
     
     return ", ".join(result)
 
+def add_section_names(reading):
+    print(f"Adding reading: {reading}")
+    if any(x in reading for x in ("Gen", "Ex", "Lev", "Num", "Deu")):
+        return "LAW: " + reading
+    elif "Matt" in reading:          
+        return "LION: " + reading
+    elif any(x in reading for x in ("Joshua", "Judges", "Ruth", "Sam", "Kings", "Chron", "Ezra", "Nehemiah", "Esther")):
+        return "HISTORY: " + reading
+    elif "Mark" in reading:          
+        return "OX: " + reading
+    elif any(x in reading for x in ("Psalms", "Prov", "Eccles.", "Song", "Job")):
+        return "WISDOM: " + reading
+    elif "Luke" in reading:          
+        return "MAN: " + reading
+    elif any(x in reading for x in ("Isaiah", "Jer", "Lam", "Ezekiel", "Daniel", "Hosea", "Joel", "Amos", "Obd", "Jonah", "Micah", "Nahum", "Hab", "Zeph", "Haggai", "Zech.", "Malachi")):
+        return "PROPHETS: " + reading
+    elif "John" in reading:          
+        return "EAGLE: " + reading
+    else:
+        return "NEW COV: " + reading
+
 days = 365
 base = 3
 extra = len(chapters) - base * days
+margin = 24
+margin_top_and_bottom = margin * 2 
+page_height = 612
+row_height = 12
+available_height = page_height - margin_top_and_bottom
+estimated_rows = int(available_height / row_height)
+MAX_ROWS_PER_COLUMN = 39
+rows_per_column = min(estimated_rows, MAX_ROWS_PER_COLUMN)
 
 schedule = []
 idx = 0
@@ -94,22 +123,14 @@ start = date(2026,1,1)
 rows = [["Date","Reading"]]
 for i, r in enumerate(schedule):
     d = start + timedelta(days=i)
-    rows.append([d.strftime("%b %d"), r])
+    reading = add_section_names(r)
+    print("\n what's getting appended: ", reading)
+    rows.append([d.strftime("%b %d"), reading])
 
 # Prepare for multi-column layout
 columns_per_page = 5
 body_rows = rows[1:]
-total = len(body_rows)
-
-# Calculate rows per column based on available page height
-# LETTER landscape: 11" x 8.5" = 792 x 612 points
-available_height = 612 - 48  # subtract top/bottom margins (24 each)
-# approximate points per row (font 5.5 + padding). Increase to reduce rows per column.
-row_height = 12
-estimated_rows = int(available_height / row_height)
-# Cap rows per column so columns don't become excessively tall
-MAX_ROWS_PER_COLUMN = 39
-rows_per_column = min(estimated_rows, MAX_ROWS_PER_COLUMN)
+totalRows = len(body_rows)
 
 
 def generate_pdf(output_path=None):
@@ -118,7 +139,7 @@ def generate_pdf(output_path=None):
         output_path = os.path.join(here, "2026_Bible_Reading_Plan.pdf")
 
     doc = SimpleDocTemplate(output_path, pagesize=landscape(LETTER),
-                            rightMargin=24, leftMargin=24, topMargin=24, bottomMargin=24)
+                            rightMargin=margin, leftMargin=margin, topMargin=margin, bottomMargin=margin)
 
     style = TableStyle([
         ('FONTNAME', (0,0), (-1,0), 'Helvetica'),
@@ -137,11 +158,11 @@ def generate_pdf(output_path=None):
 
     # Split body rows into pages, each page gets 4 columns of rows_per_column height
     rows_per_page = rows_per_column * columns_per_page
-    num_pages = math.ceil(total / rows_per_page)
+    num_pages = math.ceil(totalRows / rows_per_page)
     
     for page_num in range(num_pages):
         page_start = page_num * rows_per_page
-        page_end = min(page_start + rows_per_page, total)
+        page_end = min(page_start + rows_per_page, totalRows)
         page_rows = body_rows[page_start:page_end]
         
         # Split this page's rows into 4 columns
