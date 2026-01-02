@@ -2,6 +2,7 @@
 
 import sys
 import traceback
+
 try:
     from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, PageBreak
     from reportlab.lib.pagesizes import LETTER, landscape
@@ -81,7 +82,6 @@ def compress_chapters(chapter_list):
     return ", ".join(result)
 
 def add_section_names(reading):
-    print(f"Adding reading: {reading}")
     if any(x in reading for x in ("Gen", "Ex", "Lev", "Num", "Deu")):
         return "LAW: " + reading
     elif "Matt" in reading:          
@@ -124,7 +124,6 @@ rows = [["Date","Reading"]]
 for i, r in enumerate(schedule):
     d = start + timedelta(days=i)
     reading = add_section_names(r)
-    print("\n what's getting appended: ", reading)
     rows.append([d.strftime("%b %d"), reading])
 
 # Prepare for multi-column layout
@@ -142,10 +141,8 @@ def generate_pdf(output_path=None):
                             rightMargin=margin, leftMargin=margin, topMargin=margin, bottomMargin=margin)
 
     style = TableStyle([
-        ('FONTNAME', (0,0), (-1,0), 'Helvetica'),
-        ('FONTSIZE', (0,0), (-1,0), 6),
         ('FONTNAME', (0,1), (-1,-1), 'Helvetica'),
-        ('FONTSIZE', (0,1), (-1,-1), 5.5),
+        ('FONTSIZE', (0,0), (-1,-1), 5.5),
         ('GRID', (0,0), (-1,-1), 0.25, colors.grey),
         ('VALIGN', (0,0), (-1,-1), 'TOP'),
         ('LEFTPADDING', (0,0), (-1,-1), 2),
@@ -155,7 +152,7 @@ def generate_pdf(output_path=None):
     ])
 
     story = []
-
+    
     # Split body rows into pages, each page gets 4 columns of rows_per_column height
     rows_per_page = rows_per_column * columns_per_page
     num_pages = math.ceil(totalRows / rows_per_page)
